@@ -1,0 +1,8 @@
+---
+pve_vol: local-zfs
+ssh_template: "ssh.j2"
+vm_size: 10
+vm_core: 1
+vm_onboot: 1
+vm_os: linux
+bridge_main: vmbr0

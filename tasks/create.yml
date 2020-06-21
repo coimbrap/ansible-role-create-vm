@@ -1,0 +1,56 @@
+# tasks file for roles/create_ct
+- include_vars: vars/pve_credentials.yml
+
+- name: create | create VM
+  proxmox_kvm:
+    api_user: "{{ user_pve }}"
+    api_password: "{{ passwd_pve }}"
+    api_host: "{{ host_pve }}"
+    node: "{{ node }}"
+    name: "{{ vm_name }}"
+    sata: '{"sata0":"{{ pve_vol }}:{{ vm_size }}","sata1":"local:iso/{{ vm_iso }},media=cdrom"}'
+    net: '{"net0":"virtio,bridge={{bridge_main}}"{% if bridge_second is defined%},"net1":"virtio,bridge={{bridge_second}}{% endif %}"}'
+    cores: "{{ vm_core }}"
+    ostype: "{{ vm_os }}"
+    onboot: "{{ vm_onboot }}"
+    vmid: "{{ vm_id }}"
+    cpuunits: 1024
+    timeout: 600
+  delegate_to: localhost
+  tags:
+    - create
+
+- name: create | start VM
+  proxmox_kvm:
+    api_user: "{{ user_pve }}"
+    api_password: "{{ passwd_pve }}"
+    api_host: "{{ host_pve }}"
+    node: "{{ node }}"
+    name: "{{ vm_name }}"
+    state: started
+  delegate_to: localhost
+  tags:
+    - start
+
+- name: create | add host to ssh config
+  template:
+    src: "{{ ssh_template }}"
+    dest: ../ssh/config.tmp
+  delegate_to: localhost
+  tags:
+    - ssh
+
+- name: create | append ssh config
+  shell: |
+    if ! grep -q "{{ vm_name }}" ../ssh/config; then
+      cat ../ssh/config.tmp >> ../ssh/config
+    fi
+  delegate_to: localhost
+  tags:
+    - ssh
+
+- name: create | remove temp file
+  shell: rm ../ssh/config.tmp
+  delegate_to: localhost
+  tags:
+    - ssh
