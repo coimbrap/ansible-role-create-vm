@@ -1,6 +1,6 @@
 # Ansible Role - Create VM
 
-Role Ansible pour créer des VM KVM sous Proxmox.
+Ansible role to create VMs in Proxmox
 
 ### Example
 
