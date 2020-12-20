@@ -1,6 +1,5 @@
 
-Host {{ vm_name }}
+Host {{ vm_name.lower() }}
     Hostname {{vm_ip}}
-
     User root
     ProxyJump {{ node_bastion }}

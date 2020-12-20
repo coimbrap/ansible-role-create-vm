@@ -1,4 +1,4 @@
-# tasks file for roles/create_ct
+---
 - include_vars: vars/pve_credentials.yml
 
 - name: create | create VM
@@ -9,13 +9,14 @@
     node: "{{ node }}"
     name: "{{ vm_name }}"
     sata: '{"sata0":"{{ pve_vol }}:{{ vm_size }}","sata1":"local:iso/{{ vm_iso }},media=cdrom"}'
-    net: '{"net0":"virtio,bridge={{bridge_main}}"{% if bridge_second is defined%},"net1":"virtio,bridge={{bridge_second}}{% endif %}"}'
+    net: '{"net0":"virtio,bridge={{bridge_main}}{% if bridge_main_vlan is defined %},trunks="{{ bridge_main_vlan }}"{% endif %}"{% if bridge_second is defined%},"net1":"virtio,bridge={{bridge_second}}"{% endif %}}'
     cores: "{{ vm_core }}"
     ostype: "{{ vm_os }}"
     onboot: "{{ vm_onboot }}"
     vmid: "{{ vm_id }}"
     cpuunits: 1024
     timeout: 600
+    proxmox_default_behavior: no_defaults
   delegate_to: localhost
   tags:
     - create
@@ -35,22 +36,28 @@
 - name: create | add host to ssh config
   template:
     src: "{{ ssh_template }}"
-    dest: ../ssh/config.tmp
+    dest: "../ssh/config-{{ vm_name }}"
   delegate_to: localhost
   tags:
     - ssh
 
 - name: create | append ssh config
   shell: |
-    if ! grep -q "{{ vm_name }}" ../ssh/config; then
-      cat ../ssh/config.tmp >> ../ssh/config
+    erase={{ erase_ssh }}
+    if [ "$erase" ]; then
+      sed -i '/Host {{ vm_name.lower() }}/,/^\s*$/d' ../ssh/config
+    fi
+    if ! grep -q "Host {{ vm_name }}" ../ssh/config; then
+      cat ../ssh/config-{{ vm_name }} >> ../ssh/config
     fi
   delegate_to: localhost
   tags:
     - ssh
 
-- name: create | remove temp file
-  shell: rm ../ssh/config.tmp
+- name: create | remove temp file
+  file:
+    path: "../ssh/config-{{ vm_name }}"
+    state: absent
   delegate_to: localhost
   tags:
     - ssh

@@ -6,3 +6,4 @@ vm_core: 1
 vm_onboot: 1
 vm_os: linux
 bridge_main: vmbr0
+erase_ssh: true
